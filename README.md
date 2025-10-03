@@ -1,7 +1,28 @@
 # pri-routeros-scr
-Private Script base on eworm-de projects
+(Private Script base on eworm-de projects)
 
-1) Siapkan bot Telegram (sekali saja)
+# pri-routeros-scr
+
+Kumpulan **RouterOS Scripts** untuk monitoring jaringan via **Telegram**.
+
+## 📂 Struktur
+- `global-config-overlay/environment.rsc` → konfigurasi global (token, chatid, secret, dll.)
+- `mods/` → modul-modul fungsi
+- `installers/` → script auto-install modul tertentu
+- `README.md` → panduan
+
+## 🚀 Instalasi Cepat
+1. Edit `environment.rsc` isi token/chatid.
+2. Upload ke router:  
+
+
+
+
+
+PENTING:
+Siapkan bot Telegram (sekali saja)
+
+
 
 Buka Telegram → cari @BotFather → tekan Start.
 
@@ -31,3 +52,5 @@ Kalau private, angka positif (misal 123456789).
 Catat chat_id itu.
 
 Catatan: untuk grup super, chat_id mulai dengan -100.... Itu normal.
+
+
