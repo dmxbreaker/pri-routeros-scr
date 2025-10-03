@@ -11,7 +11,6 @@ Struktur repo dibuat sederhana agar mudah dipakai user awam maupun sysadmin.
 
 ## 📂 Struktur Repo
 
-
 pri-routeros-scr/
 ├─ global-config-overlay/
 │ └─ environment.rsc
@@ -30,6 +29,8 @@ pri-routeros-scr/
 │ └─ install-all.rsc
 └─ README.md
 
+yaml
+Salin kode
 
 ---
 
@@ -48,17 +49,16 @@ Agar router bisa `fetch` script dari GitHub via HTTPS:
 ```rsc
 /tool fetch url="https://raw.githubusercontent.com/dmxbreaker/pri-routeros-scr/main/installers/install-certificates.rsc" dst-path=install-certificates.rsc
 /import file-name=install-certificates.rsc
-
-
 Jika sukses, log akan muncul:
 
+pgsql
+Salin kode
 [install-certificates] Import certificate selesai. Router siap fetch via HTTPS.
-
 3️⃣ Install Semua Modul + Installer
+rsc
+Salin kode
 /tool fetch url="https://raw.githubusercontent.com/dmxbreaker/pri-routeros-scr/main/installers/install-all.rsc" dst-path=install-all.rsc
 /import file-name=install-all.rsc
-
-
 install-all.rsc akan:
 
 mengunduh & import environment.rsc
@@ -70,19 +70,17 @@ mengunduh & import semua installers/
 membuat scheduler & hook otomatis
 
 4️⃣ Konfigurasi Bot Telegram
-
 Edit script environment di RouterOS:
 
+rsc
+Salin kode
 :global TG_TOKEN_MON "123456789:ABCDEF-your-bot-token";
 :global TG_CHATID_MON "-1001234567890";
 :global TG_TRUSTED_CHATIDS { "-1001234567890"; }
 :global RESTART_SECRET "mySecret123";
-
-
 ⚠️ Jangan bagikan token bot Telegram ke siapa pun.
 
 5️⃣ Uji Coba
-
 Hotspot login/logout → notifikasi muncul di Telegram.
 
 Health check → tiap 10 menit, jika ada masalah (low memory, suhu CPU tinggi) → Telegram alert.
@@ -98,19 +96,21 @@ mod_tg_poller	Poll update Telegram (versi minimal, logging pesan)
 mod_health_check	Monitor memori, suhu CPU, uptime → alert Telegram
 mod_log_forwarder	Forward log RouterOS ke Telegram secara berkala
 mod_restart_via_telegram	Restart router dengan secret lewat Telegram
+
 ⚠️ Troubleshooting
+HTTPS fetch gagal / SSL error
+Pastikan sudah import certificate (step 2).
 
-HTTPS fetch gagal / SSL error → pastikan sudah import certificate (step 2).
+Tidak ada pesan Telegram
+Cek token/chat id di environment.rsc, cek log:
 
-Tidak ada pesan Telegram → cek token/chat id di environment.rsc, cek log:
-
+rsc
+Salin kode
 /log print where message~"Telegram"
-
-
-Hotspot hook tidak jalan → pastikan install-user-eventlog.rsc sudah di-import.
+Hotspot hook tidak jalan
+Pastikan install-user-eventlog.rsc sudah di-import.
 
 🔐 Keamanan
-
 Gunakan TG_TRUSTED_CHATIDS untuk membatasi akses bot.
 
 Gunakan RESTART_SECRET yang kuat & unik.
@@ -118,17 +118,13 @@ Gunakan RESTART_SECRET yang kuat & unik.
 Uji coba di router lab sebelum dipasang di produksi.
 
 🧹 Uninstall (opsional)
+rsc
+Salin kode
 /system scheduler remove [find where name="HealthCheck"]
 /system scheduler remove [find where name="LogForward"]
 /system scheduler remove [find where name="TG-Poller"]
 
 /system script remove [find where name~"mod_"]
 /system script remove [find where name="environment"]
-
-
 ✍️ Author: dmxbreaker
-
 📌 License: MIT (lihat file LICENSE)
-
-
-
