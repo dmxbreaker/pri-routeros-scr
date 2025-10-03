@@ -42,7 +42,11 @@ Dapatkan chat_id dengan cara paling mudah:
 
 Buka browser di HP/PC, tempelkan URL ini (ganti <TOKEN>):
 
+<<<<<<< HEAD
 #https://api.telegram.org/bot<TOKEN>/getUpdates#
+=======
+https://api.telegram.org/bot<TOKEN>/getUpdates
+>>>>>>> 15ed410021222926dcf70744121135e79a1de72f
 
 
 Setelah tadi kamu kirim pesan, di hasil JSON akan terlihat chat":{"id": ... }.
