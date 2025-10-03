@@ -1,6 +1,7 @@
 #!rsc
-:global mod_user_eventlog do={
+# Log user hotspot login/logout → Telegram + file
 
+:global mod_user_eventlog do={
     :local event     ($1)
     :local username  ($2)
     :local ipaddr    ($3)
@@ -24,13 +25,9 @@
     :do {
         /tool fetch url=("https://api.telegram.org/bot$TG_TOKEN_MON/sendMessage?chat_id=$TG_CHATID_MON&parse_mode=Markdown&text=$msg") \
         http-method=get keep-result=no
-    } on-error={
-        :log warning "[mod_user_eventlog] Failed send to Telegram"
-    }
+    } on-error={ :log warning "[mod_user_eventlog] gagal kirim Telegram" }
 
-    :do {
-        :put ($msg . "\r\n") >> $USER_EVENTS_FILE
-    } on-error={
-        :log warning "[mod_user_eventlog] Failed write to file"
+    :do { :put ($msg . "\r\n") >> $USER_EVENTS_FILE } on-error={
+        :log warning "[mod_user_eventlog] gagal tulis file"
     }
 }
