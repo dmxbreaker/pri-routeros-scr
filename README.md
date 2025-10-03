@@ -1,62 +1,134 @@
 # pri-routeros-scr
-(Private Script base on eworm-de projects)
 
-# pri-routeros-scr
+[![RouterOS v7+](https://img.shields.io/badge/RouterOS-v7+-blue.svg)]()
+[![Telegram Bot Ready](https://img.shields.io/badge/Telegram-Bot%20Ready-29a1d4.svg?logo=telegram)]()
+[![License MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Kumpulan **RouterOS Scripts** untuk monitoring jaringan via **Telegram**.
+Kumpulan **RouterOS Scripts** untuk monitoring & kontrol router via **Telegram**.  
+Struktur repo dibuat sederhana agar mudah dipakai user awam maupun sysadmin.
 
-## 📂 Struktur
-- `global-config-overlay/environment.rsc` → konfigurasi global (token, chatid, secret, dll.)
-- `mods/` → modul-modul fungsi
-- `installers/` → script auto-install modul tertentu
-- `README.md` → panduan
+---
 
-
-## 🚀 Instalasi Cepat
-1. Edit `environment.rsc` isi token/chatid.
-2. Upload ke router:  
-3. Router otomatis pasang script login/logout ke semua Hotspot Profile.
-4. Tes dengan login user hotspot → notifikasi muncul di Telegram.
+## 📂 Struktur Repo
 
 
+pri-routeros-scr/
+├─ global-config-overlay/
+│ └─ environment.rsc
+├─ mods/
+│ ├─ mod_user_eventlog.rsc
+│ ├─ mod_tg_poller.rsc
+│ ├─ mod_health_check.rsc
+│ ├─ mod_log_forwarder.rsc
+│ └─ mod_restart_via_telegram.rsc
+├─ installers/
+│ ├─ install-certificates.rsc
+│ ├─ install-user-eventlog.rsc
+│ ├─ install-health-check.rsc
+│ ├─ install-log-forwarder.rsc
+│ ├─ install-tg-poller.rsc
+│ └─ install-all.rsc
+└─ README.md
 
 
+---
 
-## PENTING:
-Siapkan bot Telegram (sekali saja)
+## 🚀 Instalasi Step by Step
 
+### 1️⃣ Persiapan
+- Pastikan router sudah bisa akses internet.  
+- Buka **Winbox / WebFig / SSH terminal**.
 
-# Buka Telegram → cari @BotFather → tekan Start.
+---
 
-# Kirim /newbot → ikuti instruksi beri nama dan username bot.
+### 2️⃣ Install Root Certificates (sekali saja)
 
-# BotFather akan kasih Token (contoh: 123456789:ABCDEF...). Simpan token ini.
+Agar router bisa `fetch` script dari GitHub via HTTPS:
 
-# Tentukan chat tujuan:
-
-Kalau grup: buat grup, tambahkan bot sebagai anggota, lalu kirim pesan apa saja di grup itu.
-
-Kalau private (ke diri sendiri): chat langsung bot-mu dan kirim pesan apa saja.
-
-Dapatkan chat_id dengan cara paling mudah:
-
-Buka browser di HP/PC, tempelkan URL ini (ganti <TOKEN>):
-
-<<<<<<< HEAD
-#https://api.telegram.org/bot<TOKEN>/getUpdates#
-=======
-https://api.telegram.org/bot<TOKEN>/getUpdates
->>>>>>> 15ed410021222926dcf70744121135e79a1de72f
+```rsc
+/tool fetch url="https://raw.githubusercontent.com/dmxbreaker/pri-routeros-scr/main/installers/install-certificates.rsc" dst-path=install-certificates.rsc
+/import file-name=install-certificates.rsc
 
 
-Setelah tadi kamu kirim pesan, di hasil JSON akan terlihat chat":{"id": ... }.
+Jika sukses, log akan muncul:
 
-Kalau grup, biasanya bentuknya minus besar, misal: -1002910530545.
+[install-certificates] Import certificate selesai. Router siap fetch via HTTPS.
 
-Kalau private, angka positif (misal 123456789).
+3️⃣ Install Semua Modul + Installer
+/tool fetch url="https://raw.githubusercontent.com/dmxbreaker/pri-routeros-scr/main/installers/install-all.rsc" dst-path=install-all.rsc
+/import file-name=install-all.rsc
 
-Catat chat_id itu.
 
-# Catatan: untuk grup super, chat_id mulai dengan -100.... Itu normal.
+install-all.rsc akan:
+
+mengunduh & import environment.rsc
+
+mengunduh & import semua mods/
+
+mengunduh & import semua installers/
+
+membuat scheduler & hook otomatis
+
+4️⃣ Konfigurasi Bot Telegram
+
+Edit script environment di RouterOS:
+
+:global TG_TOKEN_MON "123456789:ABCDEF-your-bot-token";
+:global TG_CHATID_MON "-1001234567890";
+:global TG_TRUSTED_CHATIDS { "-1001234567890"; }
+:global RESTART_SECRET "mySecret123";
+
+
+⚠️ Jangan bagikan token bot Telegram ke siapa pun.
+
+5️⃣ Uji Coba
+
+Hotspot login/logout → notifikasi muncul di Telegram.
+
+Health check → tiap 10 menit, jika ada masalah (low memory, suhu CPU tinggi) → Telegram alert.
+
+Log forwarder → tiap 30 menit kirim potongan log.
+
+Telegram poller → pesan masuk dari bot akan dicatat di log RouterOS.
+
+📲 Modul yang Tersedia
+Modul	Fungsi
+mod_user_eventlog	Notifikasi login/logout user Hotspot → Telegram + simpan file
+mod_tg_poller	Poll update Telegram (versi minimal, logging pesan)
+mod_health_check	Monitor memori, suhu CPU, uptime → alert Telegram
+mod_log_forwarder	Forward log RouterOS ke Telegram secara berkala
+mod_restart_via_telegram	Restart router dengan secret lewat Telegram
+⚠️ Troubleshooting
+
+HTTPS fetch gagal / SSL error → pastikan sudah import certificate (step 2).
+
+Tidak ada pesan Telegram → cek token/chat id di environment.rsc, cek log:
+
+/log print where message~"Telegram"
+
+
+Hotspot hook tidak jalan → pastikan install-user-eventlog.rsc sudah di-import.
+
+🔐 Keamanan
+
+Gunakan TG_TRUSTED_CHATIDS untuk membatasi akses bot.
+
+Gunakan RESTART_SECRET yang kuat & unik.
+
+Uji coba di router lab sebelum dipasang di produksi.
+
+🧹 Uninstall (opsional)
+/system scheduler remove [find where name="HealthCheck"]
+/system scheduler remove [find where name="LogForward"]
+/system scheduler remove [find where name="TG-Poller"]
+
+/system script remove [find where name~"mod_"]
+/system script remove [find where name="environment"]
+
+
+✍️ Author: dmxbreaker
+
+📌 License: MIT (lihat file LICENSE)
+
 
 
