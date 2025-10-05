@@ -1,4 +1,4 @@
-# PRI RouterOS Scripts — VSE Copy-Paste Pack (ROS 7.20)
+# PRI RouterOS Scripts — 
 
 base on https://github.com/eworm-de/routeros-scripts
 
