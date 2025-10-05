@@ -1,16 +1,23 @@
-#!rsc
-# Restart router jika command benar
+# Reboot jika secret cocok & chat_id terpercaya; helper pusat.
+:global TG_CHATID_MON; :global RESTART_SECRET; :global isTrustedChat; :global tgSendMessage
 
-:global mod_restart_via_telegram do={
-    :global RESTART_SECRET;
-    :global TG_TOKEN_MON;
-    :global TG_CHATID_MON;
+:local arg ($"arg")
+:local fromChat ($"chat_id")
 
-    :local arg ($1)
-    :if ($arg = $RESTART_SECRET) do={
-        /tool fetch url=("https://api.telegram.org/bot$TG_TOKEN_MON/sendMessage?chat_id=$TG_CHATID_MON&text=Router restarting...") http-method=get keep-result=no
-        /system reboot
-    } else={
-        /tool fetch url=("https://api.telegram.org/bot$TG_TOKEN_MON/sendMessage?chat_id=$TG_CHATID_MON&text=Invalid secret, restart aborted") http-method=get keep-result=no
-    }
+:if (![ $isTrustedChat $fromChat ]) do={
+  :local warn ("RESTART: chat tak dipercaya: " . $fromChat)
+  :log warning $warn
+  $tgSendMessage $TG_CHATID_MON $warn
+  :return
+}
+
+:if ($arg = $RESTART_SECRET) do={
+  :local info "RESTART: Secret valid, reboot now"
+  :log warning $info
+  $tgSendMessage $TG_CHATID_MON $info
+  /system reboot
+} else={
+  :local info "RESTART: Secret salah"
+  :log warning $info
+  $tgSendMessage $TG_CHATID_MON $info
 }

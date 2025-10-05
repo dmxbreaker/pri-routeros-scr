@@ -1,18 +1,15 @@
-#!rsc
-# install-certificates.rsc
-# Auto fetch & import Let's Encrypt root certificates (ISRG Root X1 & X2)
-# Dibutuhkan agar RouterOS bisa fetch script via HTTPS (GitHub, dll.)
+# Install Let's Encrypt (ISRG) roots – dengan penanganan error
+:do {
+  :log info "CERT: mengunduh ISRG Root X1/X2"
+  /tool fetch url="https://letsencrypt.org/certs/isrgrootx1.pem" mode=https dst-path="isrgrootx1.pem" keep-result=yes
+  /tool fetch url="https://letsencrypt.org/certs/isrgrootx2.pem" mode=https dst-path="isrgrootx2.pem" keep-result=yes
 
-:log info "[install-certificates] Mulai download root certificates..."
+  :if ([:len [/file find name="isrgrootx1.pem"]]=0) do={ :error "CERT: isrgrootx1.pem tidak ditemukan" }
+  :if ([:len [/file find name="isrgrootx2.pem"]]=0) do={ :error "CERT: isrgrootx2.pem tidak ditemukan" }
 
-# Download ISRG Root X1
-/tool fetch url="https://letsencrypt.org/certs/isrgrootx1.pem" dst-path="isrg-root-x1.pem"
-:delay 2s
-/certificate import file-name=isrg-root-x1.pem passphrase=""
+  :log info "CERT: impor ke /certificate"
+  /certificate import file-name="isrgrootx1.pem" passphrase=""
+  /certificate import file-name="isrgrootx2.pem" passphrase=""
 
-# Download ISRG Root X2
-/tool fetch url="https://letsencrypt.org/certs/isrg-root-x2.pem" dst-path="isrg-root-x2.pem"
-:delay 2s
-/certificate import file-name=isrg-root-x2.pem passphrase=""
-
-:log info "[install-certificates] Import certificate selesai. Router siap fetch via HTTPS."
+  :log info "CERT: selesai"
+} on-error={ :log warning ("CERT: gagal - " . $"message") }

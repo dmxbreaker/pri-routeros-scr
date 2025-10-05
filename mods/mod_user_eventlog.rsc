@@ -1,33 +1,10 @@
-#!rsc
-# Log user hotspot login/logout → Telegram + file
+# tipis: pakai helper pusat
+:global TG_CHATID_MON; :global tgSendMessage
+:local evt $"event"; :local user [$"user"]; :local addr [$"address"]; :local mac [$"mac-address"]; :local hs [$"hotspot"]
+:local msg ("[Hotspot] " . $evt . "\nUser: " . $user . "\nIP: " . $addr . "\nMAC: " . $mac . "\nProfile: " . $hs)
+$tgSendMessage $TG_CHATID_MON $msg
 
-:global mod_user_eventlog do={
-    :local event     ($1)
-    :local username  ($2)
-    :local ipaddr    ($3)
-    :local macaddr   ($4)
-
-    :global TG_TOKEN_MON;
-    :global TG_CHATID_MON;
-    :global USER_EVENTS_FILE;
-
-    :local logtime [/system clock get time]
-    :local logdate [/system clock get date]
-    :local timestamp ("$logdate $logtime")
-
-    :local msg ("### User Session Event\n" .
-        "**Time:** $timestamp\n" .
-        "**Event:** $event\n" .
-        "**User:** `$username`\n" .
-        "**IP:** `$ipaddr`\n" .
-        "**MAC:** `$macaddr`\n")
-
-    :do {
-        /tool fetch url=("https://api.telegram.org/bot$TG_TOKEN_MON/sendMessage?chat_id=$TG_CHATID_MON&parse_mode=Markdown&text=$msg") \
-        http-method=get keep-result=no
-    } on-error={ :log warning "[mod_user_eventlog] gagal kirim Telegram" }
-
-    :do { :put ($msg . "\r\n") >> $USER_EVENTS_FILE } on-error={
-        :log warning "[mod_user_eventlog] gagal tulis file"
-    }
-}
+:local LOGFILE "user-events.log"
+:local cur ""
+:if ([:len [/file find name=$LOGFILE]]>0) do={ :set cur [/file get $LOGFILE contents] } else={ /file add name=$LOGFILE contents="" }
+:/file set $LOGFILE contents=($cur.$msg."\r\n")

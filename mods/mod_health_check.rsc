@@ -1,26 +1,31 @@
-#!rsc
-# Monitor kesehatan router
+# Cek memori/temperatur/uptime; kirim alert via helper.
+:global TG_CHATID_MON; :global tgSendMessage
+:global HEALTH_FREE_MEM_WARN_BYTES; :global HEALTH_TEMP_WARN_C; :global HEALTH_UPTIME_WARN_SEC
 
-:global mod_health_check do={
-    :global TG_TOKEN_MON;
-    :global TG_CHATID_MON;
-    :global HEALTH_FREE_MEM_WARN_MB;
-    :global HEALTH_CPU_TEMP_WARN;
+:local warnings ""
 
-    :local freeMem [/system resource get free-memory]
-    :local cpuTemp [/system health get temperature]
-    :local uptime [/system resource get uptime]
-    :local warn ""
+:local freeMem [/system resource get free-memory]
+:if ($freeMem < $HEALTH_FREE_MEM_WARN_BYTES) do={
+  :set warnings ($warnings . "Low free memory: " . $freeMem . " bytes\n")
+}
 
-    :if ($freeMem < $HEALTH_FREE_MEM_WARN_MB) do={
-        :set warn ($warn . "Low memory: $freeMem\n")
-    }
-    :if ($cpuTemp > $HEALTH_CPU_TEMP_WARN) do={
-        :set warn ($warn . "High CPU temp: $cpuTemp\n")
-    }
+:do {
+  :local temp [/system health get temperature]
+  :if ([:typeof $temp]!="nothing" && [:tonum $temp] >= $HEALTH_TEMP_WARN_C) do={
+    :set warnings ($warnings . "High temperature: " . $temp . " C\n")
+  }
+} on-error={ :log info "HEALTH: sensor temperature tidak tersedia" }
 
-    :if ([:len $warn] > 0) do={
-        :local msg ("⚠️ ALERT:\nUptime: $uptime\n" . $warn)
-        /tool fetch url=("https://api.telegram.org/bot$TG_TOKEN_MON/sendMessage?chat_id=$TG_CHATID_MON&text=$msg") http-method=get keep-result=no
-    }
+:local up [/system resource get uptime]
+:local upsec [/system resource get uptime-seconds]
+:if ($upsec >= $HEALTH_UPTIME_WARN_SEC) do={
+  :set warnings ($warnings . "Long uptime: " . $up . "\n")
+}
+
+:if ([:len $warnings] > 0) do={
+  :local msg ("[Health Warning]\n" . $warnings)
+  $tgSendMessage $TG_CHATID_MON $msg
+  :log warning $msg
+} else={
+  :log info "HEALTH: OK"
 }
